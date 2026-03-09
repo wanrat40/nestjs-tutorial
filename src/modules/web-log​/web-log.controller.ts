@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Get, Request, Body, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Post, UseGuards, Get, Request, Body, UseInterceptors, UploadedFiles, Query, Param } from '@nestjs/common';
 import { WebLogService } from './web-log.service';
 import { JwtAuthGuard } from '../security/auth-guard/jwt-auth.guard';
 import { WebLogHeader } from 'src/models/web_log_headers';
@@ -20,8 +20,16 @@ export class WebLogController {
     @Roles(USER_ROLE.ADMIN, USER_ROLE.VIEWER)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Get('/')
-    getWebLogs(): Promise<BaseResponseDto<WebLogHeader[]>> {
-        return this.webLogService.getWebLog();
+    getWebLogs(@Query() query: any): Promise<BaseResponseDto<WebLogHeader[]>> {
+        return this.webLogService.getWebLog(query);
+    }
+
+    @Roles(USER_ROLE.ADMIN, USER_ROLE.VIEWER)
+    @UseGuards(JwtAuthGuard, RolesGuard)    
+    @Get('/:id')
+    async getWebLogById(@Param('id') id: string){  
+        console.log('id', id);      
+        return await this.webLogService.getWebLogById(id);
     }
 
     @Roles(USER_ROLE.ADMIN)
@@ -51,5 +59,7 @@ export class WebLogController {
         const webLogDto = JSON.parse(body.data);
         return this.webLogService.createWebLog(req, webLogDto, files);
     }
+
+    
 
 }

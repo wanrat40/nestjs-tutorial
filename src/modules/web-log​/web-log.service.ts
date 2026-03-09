@@ -8,6 +8,7 @@ import { User } from 'src/models/user';
 import { Attachment } from 'src/models/attachment';
 import { WebLogAttachment } from 'src/models/web_log_attachment';
 import { Sequelize } from 'sequelize-typescript';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class WebLogService {
@@ -69,9 +70,19 @@ export class WebLogService {
     return response;
   }
 
-  async getWebLog(): Promise<BaseResponseDto<WebLogHeader[]>> {
+  async getWebLog(query: any): Promise<BaseResponseDto<WebLogHeader[]>> {
     const result = new BaseResponseDto<WebLogHeader[]>();
+
+    let whereQuery = {};
+    if (query.log_title) {
+      whereQuery['log_title'] = { [Op.like]: `%${query.log_title}%` };
+    }
+    if (query.log_status) {
+      whereQuery['log_status'] = query.log_status;
+    }
+
     const webLogs = await WebLogHeader.findAll({
+      where: whereQuery,
       include: [ //Like join query to get attachments for each web log
         {
           model: WebLogAttachment,
@@ -88,4 +99,23 @@ export class WebLogService {
 
     return result;
   }
+
+  async getWebLogById(id: string): Promise<BaseResponseDto<WebLogHeader>> {
+        const result = new BaseResponseDto<WebLogHeader>();
+        const webLog = await WebLogHeader.findOne({ 
+            where: { id: parseInt(id) },
+            include: [{
+                model: WebLogAttachment               
+            }]        
+        });
+
+        result.status = true;
+        result.message = 'Web log retrieved successfully';   
+        result.payload = webLog;
+        
+        if (!webLog) {
+            throw new Error('Web log not found');
+        }
+        return result;
+    }
 }
